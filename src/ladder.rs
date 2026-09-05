@@ -86,7 +86,8 @@ impl From<LadderStructure> for StructurePlan {
 pub fn ladder_levels() -> &'static [LadderLevel] {
     static LEVELS: OnceLock<Vec<LadderLevel>> = OnceLock::new();
     LEVELS.get_or_init(|| {
-        serde_json::from_str(LADDER_JSON).expect("assets/data/ladder.json should be valid")
+        macroquad_toolkit::data_loader::parse_json_labeled("assets/data/ladder.json", LADDER_JSON)
+            .expect("assets/data/ladder.json should be valid")
     })
 }
 

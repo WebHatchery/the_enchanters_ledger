@@ -2,6 +2,7 @@
 
 use crate::browser_clipboard::{copy_text, ClipboardCopy};
 use crate::data::{CommissionDef, GameData};
+#[cfg(debug_assertions)]
 use crate::rune_diagnostics::diagnose_session;
 use crate::rune_drawing::{canonicalize_stroke, erase_strokes_at, DrawnStroke};
 use crate::rune_quality::RunePracticeReport;
@@ -489,6 +490,7 @@ impl Game {
                     self.notifications.warning(err);
                 }
             },
+            #[cfg(debug_assertions)]
             UiAction::CopyDiagnostics => self.copy_diagnostics(),
             UiAction::ClearBoard => {
                 self.hide_interpretation_feedback();
@@ -641,6 +643,7 @@ impl Game {
         }
     }
 
+    #[cfg(debug_assertions)]
     fn copy_diagnostics(&mut self) {
         match diagnose_session(&self.session, &self.data) {
             Ok(log) => {
@@ -743,6 +746,7 @@ impl Game {
     }
 }
 
+#[cfg(debug_assertions)]
 fn diagnostic_preview(log: &str, line_count: usize) -> String {
     let preview = log.lines().take(4).collect::<Vec<_>>().join(" | ");
     format!("Diagnostic log copied ({} lines). {}", line_count, preview)

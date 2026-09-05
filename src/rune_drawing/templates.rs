@@ -33,8 +33,11 @@ struct TemplateEntry {
 fn template_table() -> &'static HashMap<String, TemplateEntry> {
     static TABLE: OnceLock<HashMap<String, TemplateEntry>> = OnceLock::new();
     TABLE.get_or_init(|| {
-        let entries: Vec<TemplateEntry> = serde_json::from_str(RUNE_TEMPLATES_JSON)
-            .expect("assets/data/rune_templates.json should be valid");
+        let entries: Vec<TemplateEntry> = macroquad_toolkit::data_loader::parse_json_labeled(
+            "assets/data/rune_templates.json",
+            RUNE_TEMPLATES_JSON,
+        )
+        .expect("assets/data/rune_templates.json should be valid");
         entries
             .into_iter()
             .map(|entry| (entry.id.clone(), entry))

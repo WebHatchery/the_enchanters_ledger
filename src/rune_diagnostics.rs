@@ -1,6 +1,8 @@
 //! Human-readable diagnostics for diagram interpretation.
 
-use crate::data::{GameData, RuneDef};
+#[cfg(any(debug_assertions, test))]
+use crate::data::GameData;
+use crate::data::RuneDef;
 use crate::magical_circle::{classify_circle_stroke, CircleBounds};
 use crate::rune_diagram::{
     cluster_strokes, gather_circle_candidates, interpret_diagram, is_circle_structure,
@@ -8,9 +10,11 @@ use crate::rune_diagram::{
     MIN_DIAGRAM_RUNE_CONFIDENCE,
 };
 use crate::rune_drawing::{recognize_rune, DrawnStroke};
+#[cfg(any(debug_assertions, test))]
 use crate::state::GameSession;
 use std::fmt::Write;
 
+#[cfg(any(debug_assertions, test))]
 pub fn diagnose_session(session: &GameSession, data: &GameData) -> Result<String, String> {
     let commission = session.current_commission(data);
     let unlocked = data

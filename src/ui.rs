@@ -122,6 +122,7 @@ pub enum UiAction {
     EraseRuneInk(StrokePoint, f32),
     ClearRuneDrawing,
     InterpretDiagram,
+    #[cfg(debug_assertions)]
     CopyDiagnostics,
     ClearBoard,
     TestDesign,
