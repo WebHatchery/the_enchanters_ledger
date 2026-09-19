@@ -33,10 +33,13 @@ ids). `strokes`/`points` are `DrawnStroke`/`StrokePoint` exactly as captured
 
 ## Using the corpus
 
-`src/corpus.rs`'s `every_corpus_sample_recognizes_as_its_label` test walks
-this directory (recursively) and asserts every sample still recognizes as
-its `label` and is `accepted` — the same bar as
-`confusion_matrix_perturbations_recognize_their_own_rune` in
-`src/rune_drawing/confusion_gate.rs`, but for real human ink instead of
-synthetic perturbations. It runs as part of `cargo test` and is a no-op
-while this directory is empty.
+The corpus regression walks this directory recursively and asserts that each
+sample still recognizes as its `label` and is `accepted`, applying the same
+recognition contract to real human ink as to synthetic perturbations. It runs
+with `cargo test` and has no samples to check while this directory is empty.
+
+Follow `CODE_STANDARDS.md` §11 when maintaining this coverage: tests and
+helpers belong in `tests/` and use the public library API. Migrate the existing
+source-owned corpus and recognition suites separately before expanding them.
+Use table-driven assertions across samples and review the complete recognition
+feature against the five-case target, preserving useful regressions.

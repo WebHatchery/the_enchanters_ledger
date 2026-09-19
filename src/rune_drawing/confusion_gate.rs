@@ -1,7 +1,7 @@
 //! Phase 0 regression wall: every rune template, plus a fixed battery of
 //! deterministic perturbations, must still recognize as itself. This is the
 //! gate future tuning changes are checked against — see
-//! `.project/magic-symbol-system-plan.md` Phase 0 and `.project/prd.md`.
+//! `.project/prd.md` for the recognition rules.
 
 use super::test_support::{perturb, resample_density};
 use super::*;

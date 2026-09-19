@@ -66,9 +66,8 @@ design; `src/reading/` implements it.
 - `.project/prd.md` — the authoritative ruleset for rune recognition and magic
   circles: what a drawing must look like to be read, what makes it read *well*,
   and what a full diagram means. Every recognizer constant should trace back to
-  a sentence here, and every sentence back to a test.
-- `.project/magic-symbol-system-plan.md` — the six-phase plan that produced the
-  system above, with a closed-out implementation audit.
+  a documented rule. Validate core recognition, state, and data behavior through
+  the public API following `CODE_STANDARDS.md` §11.
 - `tests/corpus/README.md` — how to capture real hand-drawn rune samples.
 
 Remaining work is tracked in `TODO.md`.

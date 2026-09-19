@@ -1,7 +1,7 @@
 //! Phase 0 ground-truth capture: serializes the current practice ink to
 //! `tests/corpus/<label>/<label>_<stamp>.json` so real human drawings can
 //! grow a regression corpus alongside the confusion-matrix gate. See
-//! `.project/magic-symbol-system-plan.md` Phase 0, item 1.
+//! `tests/corpus/README.md` for sample capture and the corpus format.
 
 use crate::rune_drawing::DrawnStroke;
 use serde::{Deserialize, Serialize};

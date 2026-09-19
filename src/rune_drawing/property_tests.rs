@@ -1,7 +1,7 @@
 //! Phase 0 invariance properties: same input reads the same way twice,
 //! translate/scale of a mark does not change how it reads, denser or
 //! sparser capture does not change identity, and more jitter never reads as
-//! *higher* quality. See `.project/magic-symbol-system-plan.md` Phase 0.
+//! *higher* quality. See `.project/prd.md` for the recognition rules.
 
 use super::samples;
 use super::test_support::{perturb, resample_density};

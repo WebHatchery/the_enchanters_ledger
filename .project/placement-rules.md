@@ -341,7 +341,14 @@ defining it now would have to be undone to make room for direction later.
 
 ## 9. Test obligations
 
-Every rule above needs a test, in the style the recognizer rules already use:
+Use the behaviors below to select high-value recognition and state regressions.
+Related inputs should share table-driven assertions; this list does not require
+a separate case for each bullet. Strongly target no more than five cases per
+major feature across all files, preserve useful coverage, and explain necessary
+exceptions before committing (`CODE_STANDARDS.md` §11). Put tests and test-only
+helpers in `tests/`, exercising the public library API. Migrate legacy suites
+from `src/` in a separate change before expanding coverage. Verify presentation
+with captures and manual checks; UI/rendering generally need no unit tests.
 
 - Rotating a diagram by an arbitrary angle produces an identical interpretation.
 - Evenly spaced marks join nothing — asserted against every existing quest

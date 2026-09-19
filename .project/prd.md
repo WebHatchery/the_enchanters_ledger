@@ -6,13 +6,11 @@
 > system: what a drawing has to look like to be read, what makes it read
 > *well*, and what a full circle diagram means. It exists so tuning the
 > recognizer is never "change a constant and see what happens" — every
-> constant below should trace back to a sentence here, and every sentence
-> here should trace back to a test in `src/rune_drawing/confusion_gate.rs`,
-> `src/rune_drawing/property_tests.rs`, or `tests/corpus/`.
+> constant below should trace back to a rule here. Use the validation
+> contracts in §7 and the current testing policy in `CODE_STANDARDS.md` §11.
 >
-> Written as Phase 0 of `.project/magic-symbol-system-plan.md`, updated
-> through Phase 6 (the plan's final phase). It documents the system **as it
-> exists today**: Hungarian
+> This ruleset describes the recognition and magic-circle behavior:
+> Hungarian
 > stroke assignment, open-stroke corner fix, eraser-fragment merge,
 > strict/identity variant parity, deterministic tie-breaks, mismatch-segment
 > alignment (D3), a continuous (not stepped) ambiguity penalty and corner
@@ -775,113 +773,48 @@ alongside it.
 | guide opacity fade | `GUIDE_BASE_ALPHA (0.32) / (1.0 + mastery_score / GUIDE_FADE_SCALE (6.0))` | `ui/drawing.rs` | §9.2 |
 | `GUIDE_FREE_INSIGHT` | 1 | `state/work.rs` | §9.2 |
 | commission `required_structure` / `required_sub_scopes` | per-commission, in `commissions.json`; checked against the root `ScopeSpell` counts in `evaluate()` | `data.rs`, `state/evaluate.rs` | §9.4 story pacing |
-| confusion-gate margins | clean/affine cases `score_gap ≥ 0.04`; resample/jitter cases `≥ 0.02`; confusable pairs exempt from margin only | `rune_drawing/confusion_gate.rs` | §7 |
+| confusion-gate margins | clean/affine cases `score_gap ≥ 0.04`; resample/jitter cases `≥ 0.02`; confusable pairs exempt from margin only | §7 validation contract | §7 |
 
 ---
 
 ## 7. Verification
 
-- **`src/rune_drawing/confusion_gate.rs`** — every rune template plus 12
-  deterministic perturbations (translate, uniform scale 0.5–2.0× — up-scale
-  clamped per template to what physically fits the slate — sparse/dense
-  resample, seeded jitter) must recognize as itself, be accepted, **and**
-  beat the runner-up by the case's margin (clean ≥ 0.04, perturbed ≥ 0.02).
-  Tracked-confusion pairs come from the template data itself
-  (`confusable_with` → `templates::known_confusions()`, §2.3); they are
-  exempt from the margin gate, never from identity. Down to one tracked
-  entry (`safer`→`sphere` under sparse resampling).
-- **`src/rune_drawing/property_tests.rs`** — determinism (same input twice →
-  identical `RecognitionOutcome`), translation/scale invariance, point-
-  density invariance (with the §2.5 exception), a jitter-monotonicity smoke
-  test (more jitter should not, on average, raise quality), a ~1%-jitter
-  quality-stability check, and `ambiguity_penalty_has_no_visible_cliff`
-  (no single small perturbation step should swing confidence far, sweeping
-  across the old hard-margin boundary).
-- **`src/rune_drawing/shape.rs` unit tests** — `corner_count` on hand-built
-  shapes (open line/bend, closed square/hexagon/diamond).
-- **`src/rune_drawing/tests.rs`** — `every_rune_has_a_data_driven_template`
-  and `touch_and_continuous_expose_their_extra_variants` guard the JSON
-  template table; `canonicalize_stroke_converges_regardless_of_capture_density`
-  guards §2.5's capture-time fix; `reordered_strokes_do_not_produce_spurious_mismatches`
-  and `canonical_template_draws_no_mismatch_segments` guard D3.
-- **`tests/corpus/`** — real human drawings, captured in-game via the
-  Practice slate's **Capture Sample** button. `src/corpus.rs`'s
-  `every_corpus_sample_recognizes_as_its_label` test holds every captured
-  sample to the same bar. Empty today; grows as people playtest.
-- **`src/rune_diagram/tests.rs`** — `doubling_effect_rune_scale_raises_potency`
-  and `under_drawn_stroke_reads_but_reports_lower_potency` are Phase 2's
-  exit criteria as tests; `rune_quality_does_not_depend_on_board_position`
-  guards D1. Phase 3: `nested_off_center_ring_reads_its_own_effect_rune_relative_to_its_own_scope`
-  (§5.5), `rune_far_below_old_twelve_percent_scale_floor_still_reads` (§5.2,
-  C1/C2), and `hundred_plus_symbol_diagram_round_trips_within_perf_budget_and_order_independence`
-  (§5.6, the combined scale/perf/order-independence exit criterion) are the
-  new Phase 3 exit criteria as tests. The pre-existing
-  `damaged_sphere_fragment_stays_out_of_neighboring_light_cluster`,
-  `interprets_high_tier_structured_circle_spell`, and the full
-  `structural_rune_sample_set_reads_inside_full_diagrams` sweep were the
-  regression wall the §5.6 clustering-factor retune was validated against.
-- **`src/state/tests.rs`** — `doubling_effect_rune_size_raises_power_in_report`
-  is the exit criterion at the `evaluate()` level (not just `InterpretedRune`);
-  `high_tier_circle_strengthens_city_shield_commission` guards the
-  concentric-ring-stack idiom against being misread as nested scopes (§5.5).
-  Phase 4: the same test doubles as the `floating_city` recipe's full-pipeline
-  regression guard (§8.4) — its title assertion now passes through
-  `crate::recipes::match_recipe`, not a hardcoded `match` arm.
-  `diminishing_returns_let_more_structure_always_score_higher` is §8.2's exit
-  criterion (more structure past the old fixed targets must score higher, not
-  the same); `backfire_message_names_uncontained_potency` is §8.5's.
-- **`src/recipes.rs` unit tests** — the authoritative correctness suite for
-  `match_recipe` itself, run against hand-built `ScopeSpell` trees rather
-  than drawn diagrams (recognizer accuracy is a separate, already-covered
-  concern): bare-presence vs. `min_potency` requirements, potency summing
-  across sub-scopes, tier/id tie-break determinism, and a full
-  structure-plus-sub-scope-count gate modeled on `volcano`.
-- **`src/rune_diagram/tests.rs`** — `fireball_recipe_recognized_purely_from_data`
-  and `volcano_recipe_recognized_purely_from_data` are Phase 4's own exit
-  criteria as tests: both diagrams are matched against
-  `assets/data/recipes.json` with no rune-id-specific Rust in the naming
-  path. `volcano_recipe_recognized_purely_from_data` also exercises
-  `ScopeSpell::total_potency` summing fire potency across the root scope and
-  both vent sub-scopes to clear `volcano`'s `min_potency` requirement.
+`CODE_STANDARDS.md` §11 governs testing. Keep tests and test-only helpers in
+this crate's `tests/` directory beside `Cargo.toml`, exercising the public
+library API. Existing source-owned suites are legacy migration work; migrate
+those separately before expanding coverage. The source modules and historical
+test names elsewhere in this ruleset describe behavior, not approved test
+placement.
 
-  `simple_named_recipe_still_recognized_through_evaluate` is the matching
-  regression guard for the other four migrated recipes (`gravity_well` via
-  the `floating_stage` commission, which requires `gravity` directly) —
-  note it sets `workshop_rank = 4`, since `gravity` is tier 4 and
-  `GameSession::can_use_rune` (`state.rs`) excludes any rune above the
-  session's own workshop rank from the recognizer's candidate set entirely;
-  forgetting this makes an unlocked, perfectly-drawn tier-4 rune legitimately
-  read as its best-scoring *unlocked* alternative instead — worth checking
-  before suspecting a recognizer or board-placement bug in a session-level
-  (as opposed to `interpret_diagram()`-level) mismatch.
-- **Phase 5.** `rune_drawing::tests::acceptance_bands_are_ordered_practice_strictest_sandbox_most_lenient`
-  and `context_changes_acceptance_cutoffs_never_the_underlying_score` are
-  §9.1's exit criteria — the three bands order correctly and the underlying
-  recognition score never changes with context, only the cutoff applied to
-  it. `state::tests::sandbox_mode_accepts_a_weak_circle_commission_mode_rejects`
-  is the same guarantee one level up, through `GameSession::interpret_drawing`.
-  `state::tests::accepted_reads_accumulate_rune_mastery` and
-  `guide_free_interpretation_earns_insight_bonus_but_guided_does_not` guard
-  §9.2. `rune_diagnostics::tests::player_hint_flags_missing_circle`,
-  `player_hint_flags_a_weak_circle`, and `player_hint_is_none_for_a_clean_diagram`
-  guard §9.3's priority order at the function level;
-  `state::tests::circle_free_diagram_rejection_surfaces_the_specific_player_hint`
-  guards the same wiring through `interpret_drawing`.
-  `state::tests::early_commissions_still_clear_acceptance_when_drawn_with_a_degraded_hand`
-  and the pre-existing `high_tier_circle_strengthens_city_shield_commission`
-  are §9.4's pacing exit criteria (early commissions tolerate a jittered
-  hand; a late commission drawn with real structure reaches `Brilliant`).
-- **Phase 6.** `rune_diagram::tests::synthetic_diagram_round_trips_across_sizes_with_jitter`
-  is §10.1's exit criterion — a jittered synthetic diagram round-trips at
-  every size from 3 up through 300. `main::cli_tests` (three unit tests:
-  bare stroke list, `CorpusSample`, missing file) guards §10.3's CLI replay
-  tool. §10.2 has no test of its own — it's the standing CI configuration
-  (`.github/workflows/rust-ci.yml`) already exercising every test above on
-  every push and PR.
+Strongly target no more than five `#[test]` cases per major feature, regardless
+of file names or suite splits. Prefer rule-like behavior and regression tests
+with simple fixtures, and combine related inputs in table-driven assertions.
+Preserve useful coverage and explain distinct contracts needing more cases
+before committing. UI/rendering generally use captures and manual checks.
 
-Any change to a constant in §6 should keep all of the above green, or the
-affected sentence in this document (and, if it's a tracked confusion, the
-`KNOWN_CONFUSIONS` list) should be updated in the same change.
+Choose regressions from these game contracts:
+
+- Recognition preserves identity under supported translation, scale, point
+  density, stroke order, and seeded perturbations. Template confusion checks
+  require acceptance and a runner-up score gap of at least 0.04 for clean/affine
+  inputs and 0.02 for resampled/jittered inputs. Data-defined tracked-confusion
+  pairs are exempt only from the margin check, never from identity.
+- Potency follows drawn scale and completeness while board position does not
+  alter rune quality. Nested scopes, small runes, and mixed large diagrams
+  preserve their meaning when independent strokes are reordered.
+- Recipe matching uses authored data, potency and structure requirements,
+  deterministic tie breaks, and scope totals. The session applies unlocks and
+  reports the same result as the public interpretation/evaluation API.
+- Acceptance contexts change cutoffs without changing recognition scores;
+  mastery, guide aids, rejection hints, and commission progression retain
+  their documented state transitions.
+- JSON content and saved state load correctly; invalid shapes fail clearly.
+  Captured human samples in `tests/corpus/` retain their labels and acceptance.
+
+Keep existing useful regressions green when changing tuning constants. Update
+an affected design rule or tracked-confusion entry only when that behavior
+change is intentional. Timing diagnostics are separate from proof of gameplay
+correctness; the debug bounds in §10 do not establish release performance.
 
 ---
 
@@ -1200,104 +1133,45 @@ Verification (§7):
 
 ---
 
-## 10. Verification at scale (Phase 6)
+## 10. Verification at scale
 
-Phase 6 is the plan's last phase, and — per its own heading — "continuous"
-rather than one-off feature work: keep the existing regression wall broad
-and green, extend it to a size sweep, and keep a fast offline tuning loop
-available.
+Use the public recognition and interpretation APIs to check homogeneous and
+mixed diagrams at representative sizes. Follow §7 for placement, simple
+fixtures, consolidation, and the major-feature target; a size sweep does not
+require one test case per size.
 
-### 10.1 Size-swept synthetic round-trip test
+### 10.1 Size-swept round trips
 
-`rune_diagram::tests::synthetic_diagram_round_trips_across_sizes_with_jitter`
-extends the pre-existing single-size
-`hundred_plus_symbol_diagram_round_trips_within_perf_budget_and_order_independence`
-(§5.6, §7) — which stays exactly as-is, since it's also the order-independence
-exit criterion — with a size sweep from 3 up through 300 `spark` instances
-(`[3, 10, 30, 60, 120, 200, 300]`), each placed via a new `jittered_rune_grid`
-helper, and — as of the completion pass —
-`heterogeneous_diagram_round_trips_and_order_shuffle_changes_nothing`, which
-places ~150 *mixed* symbols (`spark`/`warmth`/`light` cycling, so adjacent
-neighbors are different runes, multi-stroke `light` drawn proportionally
-larger since its 2-point rays physically cannot survive at flick size),
-asserts every symbol reads as the right rune, and re-interprets the same
-ink with the symbol draw order fully reversed demanding the *identical*
-interpretation — same rune ids at the same centers with the same scales
-and potencies, not merely the same count. (`quality` is deliberately
-excluded from that equality: it rewards canonical stroke order by design,
-§3.) Every instance is perturbed with `rune_drawing::test_support::perturb`
-(the same helper §9.4's degraded-corpus test and the confusion-matrix gate
-use), with `jitter_amp` scaled to that instance's own on-canvas `scale`
-rather than a fixed absolute amplitude — a fixed amplitude tuned for one
-size (à la `confusion_gate.rs`'s `jitter_a`, perturbing a template at its
-own natural, unscaled size) is proportionally far too large once the sweep
-reaches its smaller, more tightly-packed sizes. Spacing and scale both
-tighten at the larger sizes so more instances fit inside the working circle
-while staying distinct clusters under §5.6's scale-relative clustering
-floors. Every size in the sweep — including 300, the plan's own upper
-target — round-trips: every symbol found, none merged or lost, all read as
-`spark`, within the same generous debug-`cargo test` perf bound the existing
-120-symbol test already uses (not a release-mode benchmark).
+Use the representative sizes `[3, 10, 30, 60, 120, 200, 300]`. Scale seeded
+jitter to each symbol's on-canvas size, and preserve spacing that keeps symbols
+distinct under §5.6. Every authored symbol should be found, retain its identity,
+and avoid unintended merging. For mixed diagrams, reversing independent symbol
+order should preserve rune IDs, centers, scales, and potencies. Quality is
+excluded from that equality because it intentionally rewards canonical stroke
+order (§3).
 
-### 10.2 Confusion matrix + corpus + property tests stay green — already continuous
+Preserve existing useful regressions while migrating the source-owned suites.
+Consolidate related sizes and perturbations without hiding which input failed.
+Debug test timing is only a sanity check; measure release performance separately.
 
-No code change needed. `.github/workflows/rust-ci.yml`'s `checks-and-webgl`
-job already runs `cargo test --all-features` — which includes
-`rune_drawing::confusion_gate`, `corpus::tests::every_corpus_sample_recognizes_as_its_label`,
-and `rune_drawing::property_tests` — on every push and pull request. This
-exit criterion has been continuously true since Phase 0 introduced the CI
-workflow; Phase 6 simply records it as the phase's own verification
-requirement rather than treating it as new work.
+### 10.2 Continuous validation
+
+Run the affected recognition, corpus, and property regressions after changing
+recognition rules, using the commands in the project README and shared
+standards. An empty human corpus provides no real-drawing evidence. Record
+current results with the change instead of relying on historical phase counts.
 
 ### 10.3 Fast tuning-loop replay tool
 
-The crate is binary-only (`src/main.rs`, no `src/lib.rs`, no
-`[[example]]`/`examples/` in `Cargo.toml`), so a literal `cargo run
---example` would require a lib/bin split purely to let an example crate see
-`crate::rune_diagnostics` and friends — invasive for a dev-convenience tool.
-The plan text itself offers an alternative ("or debug screen"), so Phase 6
-instead adds a CLI branch directly to `main()` (`src/main.rs`):
-`cargo run -- --diagnose <path.json>` reads a JSON file, tries parsing it as
-a `corpus::CorpusSample` (`{label, strokes}`, the exact shape
-`capture_corpus_sample` already writes to `tests/corpus/`) and falls back to
-a bare `Vec<DrawnStroke>` if that fails, then calls
-`rune_diagnostics::diagnose_diagram` and prints the log to stdout — no game
-window opens for this path.
+`cargo run -- --diagnose <path.json>` reads a corpus sample (`{label, strokes}`)
+or a bare stroke list, diagnoses the diagram, and prints to stdout without
+opening a game window. Keep this early CLI dispatch separate from the Macroquad
+window setup.
 
-Because `main.rs` is the crate root, every item this needs
-(`corpus::CorpusSample`, `data::GameData`, `rune_diagnostics::diagnose_diagram`,
-`rune_drawing::DrawnStroke`) is already visible with no visibility changes.
-`#[macroquad::main(window_conf)]` is intentionally not used on `main` itself
-— its macro expansion creates the game window (`Window::from_config(conf,
-amain())`) before any user code runs, which the CLI branch must skip
-entirely. `main` is now a plain `fn` that checks for `--diagnose` first and
-returns before ever touching macroquad if present, otherwise falling
-through to the exact `Window::from_config(window_conf(), amain())` call the
-attribute would have generated (the async body itself, unchanged, was
-renamed from `main` to `amain` to make room). The parse-and-diagnose logic
-lives in a separate `run_diagnose_cli(path) -> Result<String, String>`, kept
-free of `env::args()`/`process::exit` so it's directly unit-testable —
-`main::cli_tests` covers a bare stroke list, a `CorpusSample`, and a missing
-file.
+Expose testable parse-and-diagnose logic through an intentional library API and
+have the binary call it. Keep input fixtures and regression cases in `tests/`;
+legacy `main.rs` tests must migrate separately before coverage is expanded.
+Bare stroke lists, corpus samples, and missing files are related inputs for
+this CLI contract, not a requirement for separate test functions.
 
----
-
-*Last updated: 2026-07-04 — Phase 0 through Phase 6 of
-`.project/magic-symbol-system-plan.md` (the plan's final phase).
-Phase 1 remaining: generalize the structural-check layer (§2.3) into
-data-driven rules. Phase 2 remaining: none of the plan's four items are
-outstanding, but the containment budget (§8.3) is explicitly a rough first
-cut, not a tuned final version. Phase 3 remaining: `best_recovery_window`
-is order-independent but still windows rather than running a true beam
-search; cross-edit recognition caching was not attempted. Phase 4 remaining
-(§5.7, §8.5): recipe discovery/editing UI beyond the existing ledger/journal
-was not attempted; backfire messaging covers three causes, not every broken
-rule; containment-budget coefficients are still a first cut. Phase 5
-remaining (§9.1): Sandbox reuses the commission slate's UI rather than
-getting its own screen/reference panel; no new pacing content was authored,
-only verification of the existing curve. Phase 6 remaining (§10.1): the
-size sweep's perf bound is the same generous debug-build sanity check every
-earlier phase used, not the plan's own native-release ~100ms budget (a
-`--release` benchmark, not attempted here); the tuning-loop CLI prints to
-stdout only, with no in-repo corpus samples yet to replay against beyond
-what a developer captures locally via the in-game "Capture Sample" button.*
+Current remaining work is tracked in `TODO.md`.
